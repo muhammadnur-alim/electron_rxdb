@@ -11,7 +11,6 @@ const api = {}
 const database = {
   init: async () => {
     const db = await initDatabase()
-    let data = []
 
     const syncUrl = 'https://sort.my.id/rxdb'
 
@@ -70,6 +69,7 @@ const database = {
       todos: {
         find: async (query = {}) => {
           const docs = await db.todos.find(query).exec()
+          console.log(docs.map((doc) => doc.toJSON()))
           return docs.map((doc) => doc.toJSON())
         },
         findOne: async (id) => {
@@ -93,12 +93,16 @@ const database = {
           await doc.remove()
           return { success: true }
         },
-        subscribeData: () => {
-          return data
+        subscribe: (callback) => {
+          db.todos.find().$.subscribe((docs) => {
+            // This will be triggered on any change to the todos collection
+            const updatedDocs = docs.map((doc) => doc.toJSON())
+            console.log('Todos collection changed:', updatedDocs)
+
+            // Call the provided callback with the updated data
+            callback(updatedDocs)
+          })
         }
-        // subscribe: () => {
-        //   return replicate.received$.subscribe((doc) => console.dir(doc))
-        // }
       }
     }
   }

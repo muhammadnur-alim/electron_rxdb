@@ -17,11 +17,12 @@ function App() {
     if (db) {
       // Load initial todos
       const loadTodos = async () => {
-        const replicate = await db.todos.subscribeData()
-        console.log(replicate)
+        await db.todos.subscribe((updateTodos) => {
+          console.log(updateTodos)
+          setTodos((prev) => [...prev, updateTodos])
+        })
         // const result = await db.todos.find()
         // console.log(result, '----result')
-        // setTodos(result)
       }
       loadTodos()
     }
@@ -64,17 +65,17 @@ function App() {
       {todos.length > 0 ? (
         <ul>
           {todos.map((todo) => (
-            <li key={todo._id}>
+            <li key={todo.id}>
               {todo.name}: {todo.done ? 'Completed' : 'Not Completed'} - {todo.timestamp}
               <button
                 key={todo.id}
-                onClick={() => handleDeleteTodos(todo._id)}
+                onClick={() => handleDeleteTodos(todo.id)}
                 style={{ marginLeft: '10px', color: 'red' }}
               >
                 Delete
               </button>
               <button
-                onClick={() => toggleTodo(todo._id)}
+                onClick={() => toggleTodo(todo.id)}
                 style={{ marginLeft: '10px', color: 'green' }}
               >
                 Done

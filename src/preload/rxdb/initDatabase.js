@@ -15,10 +15,10 @@ async function initDatabase() {
 
   const todoSchema = {
     version: 0,
-    primaryKey: '_id',
+    primaryKey: 'id',
     type: 'object',
     properties: {
-      _id: {
+      id: {
         type: 'string',
         maxLength: 100 // <- the primary key must have set maxLength
       },
@@ -33,7 +33,7 @@ async function initDatabase() {
         format: 'date-time'
       }
     },
-    required: ['_id', 'name', 'done', 'timestamp']
+    required: ['id', 'name', 'done', 'timestamp']
   }
 
   await testingDb.addCollections({
