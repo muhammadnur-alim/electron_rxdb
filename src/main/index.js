@@ -15,8 +15,7 @@ function createWindow() {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       // Allow loading of external resources
-      webSecurity: false,
-      nodeIntegration: true
+      webSecurity: false
       // allowRunningInsecureContent: true
     }
   })

@@ -1,59 +1,106 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import initDatabase from './rxdb/initDatabase'
-
-let db
-// Initialize database
-const initDb = async () => {
-  if (!db) {
-    db = await initDatabase()
-  }
-  return true
-}
+import { Subject } from 'rxjs'
+import { replicateRxCollection } from 'rxdb/plugins/replication'
+import EventSource from 'eventsource'
 
 // Custom APIs for renderer
-const api = {
-  // Database operations
-  initDb: () => initDb(),
+const api = {}
 
-  // Todos operations
-  getTodos: async () => {
-    if (!db) await initDb()
-    const todos = await db.todos.find().exec()
-    return todos.map((doc) => doc.toJSON())
-  },
-  addTodo: async (todo) => {
-    if (!db) await initDb()
-    const newTodo = await db.todos.insert(todo)
-    return newTodo.toJSON()
-  },
-  updateTodo: async (id, updates) => {
-    if (!db) await initDb()
-    //Cek if exisitingTodo already exist or not
+const database = {
+  init: async () => {
+    const db = await initDatabase()
+    let data = []
 
-    const todo = await db.todos.findOne(id).exec()
-    if (todo) {
-      await todo.patch(updates)
-      return todo.toJSON()
-    }
-    return null
-  },
-  deleteTodo: async (id) => {
-    if (!db) await initDb()
-    const todo = await db.todos.findOne(id).exec()
-    if (todo) {
-      await todo.remove()
-      return true
-    }
-    return false
-  },
-  // Optional: Subscribe to changes
-  subscribeTodos: (callback) => {
-    if (!db) return
-    const sub = db.todos.find().$.subscribe((todos) => {
-      callback(todos.map((doc) => doc.toJSON()))
+    const syncUrl = 'https://sort.my.id/rxdb'
+
+    const myPullStream$ = new Subject()
+    const eventSource = new EventSource('https://sort.my.id/rxdb/stream', {
+      withCredentials: false
     })
-    return () => sub.unsubscribe()
+    eventSource.onmessage = (event) => {
+      const eventData = JSON.parse(event.data)
+      myPullStream$.next({
+        data: eventData
+      })
+    }
+
+    const replicate = replicateRxCollection({
+      collection: db.todos,
+      replicationIdentifier: 'todos-replication',
+      autoStart: true,
+      push: {
+        /* add settings from below */
+        async handler(changeRows) {
+          console.log(changeRows)
+          const rawResponse = await fetch(`${syncUrl}`, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(changeRows)
+          })
+          const conflictsArray = await rawResponse.json()
+          return conflictsArray
+        }
+      },
+      pull: {
+        /* add settings from below */
+        async handler(checkpointOrNull, batchSize) {
+          const updatedAt = checkpointOrNull ? checkpointOrNull.updatedAt : 0
+          const id = checkpointOrNull ? checkpointOrNull.id : ''
+          const response = await fetch(
+            `${syncUrl}?updatedAt=${updatedAt}&id=${id}&limit=${batchSize}`
+          )
+          const data = await response.json()
+          return { documents: data.documents, checkpoint: data.checkpoint }
+        },
+        stream$: myPullStream$.asObservable()
+      }
+    })
+
+    replicate.error$.subscribe((error) => {
+      console.error('replication error:', error)
+    })
+
+    return {
+      // Expose collection methods
+      todos: {
+        find: async (query = {}) => {
+          const docs = await db.todos.find(query).exec()
+          return docs.map((doc) => doc.toJSON())
+        },
+        findOne: async (id) => {
+          const doc = await db.todos.findOne(id).exec()
+          return doc ? doc.toJSON() : null
+        },
+        insert: async (todo) => {
+          console.log(todo, 'todo----------')
+          const doc = await db.todos.insert(todo)
+          return doc.toJSON()
+        },
+        update: async (id, update) => {
+          const doc = await db.todos.findOne(id).exec()
+          if (!doc) throw new Error('Document not found')
+          await doc.patch(update)
+          return doc.toJSON()
+        },
+        delete: async (id) => {
+          const doc = await db.todos.findOne(id).exec()
+          if (!doc) throw new Error('Document not found')
+          await doc.remove()
+          return { success: true }
+        },
+        subscribeData: () => {
+          return data
+        }
+        // subscribe: () => {
+        //   return replicate.received$.subscribe((doc) => console.dir(doc))
+        // }
+      }
+    }
   }
 }
 
@@ -64,6 +111,7 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('database', database)
   } catch (error) {
     console.error(error)
   }
