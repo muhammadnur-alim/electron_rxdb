@@ -29,7 +29,6 @@ const database = {
     const replicate = replicateRxCollection({
       collection: db.todos,
       replicationIdentifier: 'todos-replication',
-      autoStart: true,
       push: {
         /* add settings from below */
         async handler(changeRows) {
@@ -70,7 +69,6 @@ const database = {
       todos: {
         find: async (query = {}) => {
           const docs = await db.todos.find(query).exec()
-          console.log(docs.map((doc) => doc.toJSON()))
           return docs.map((doc) => doc.toJSON())
         },
         findOne: async (id) => {
@@ -105,9 +103,7 @@ const database = {
             )
             .subscribe((docs) => {
               // This will be triggered on any change to the todos collection
-              const updatedDocs = docs
-                .map((doc) => doc.toJSON())
-                .filter((doc) => doc._deleted === false)
+              const updatedDocs = docs.map((doc) => doc.toJSON())
 
               // Call the provided callback with the updated data
               callback(updatedDocs)

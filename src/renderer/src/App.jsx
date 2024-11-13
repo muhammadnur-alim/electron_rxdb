@@ -16,31 +16,35 @@ function App() {
   useEffect(() => {
     if (db) {
       // Load initial todos
+      // Ambil data dari subscribe
       const loadTodos = async () => {
         await db.todos.subscribe((updateTodos) => {
+          // Directly set the todos state with the filtered result
           setTodos(updateTodos)
         })
-        // const result = await db.todos.find()
-        // console.log(result, '----result')
       }
       loadTodos()
     }
   }, [db])
 
   const addTodo = async () => {
-    const result = await db.todos.insert({
-      id: 'todo_' + Date.now().toString(),
+    await db.todos.insert({
+      id: 'todo_' + new Date().toISOString(),
       name: 'electron_rxdb_todo_' + Date.now().toString(),
       done: false,
       timestamp: new Date().toISOString()
     })
-    setTodos((prev) => [...prev, result])
+
+    //Barisan ini bisa di hapus
+    // setTodos((prev) => [...prev, result])
   }
 
   const toggleTodo = async (id) => {
     const todo = todos.find((t) => t.id === id)
     if (todo) {
       const updated = await db.todos.update(id, { done: !todo.done })
+
+      //Barisan ini bisa di hapus
       setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)))
     }
   }
@@ -49,6 +53,7 @@ function App() {
     try {
       const success = await db.todos.delete(id)
       if (success) {
+        //Barisan ini bisa di hapus
         setTodos((prev) => prev.filter((todo) => todo.id !== id))
       }
     } catch (error) {
