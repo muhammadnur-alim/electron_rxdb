@@ -4,6 +4,7 @@ import initDatabase from './rxdb/initDatabase'
 import { Subject } from 'rxjs'
 import { replicateRxCollection } from 'rxdb/plugins/replication'
 import EventSource from 'eventsource'
+import { distinctUntilChanged } from 'rxjs/operators'
 
 // Custom APIs for renderer
 const api = {}
@@ -94,14 +95,23 @@ const database = {
           return { success: true }
         },
         subscribe: (callback) => {
-          db.todos.find().$.subscribe((docs) => {
-            // This will be triggered on any change to the todos collection
-            const updatedDocs = docs.map((doc) => doc.toJSON())
-            console.log('Todos collection changed:', updatedDocs)
+          db.todos
+            .find()
+            .$.pipe(
+              distinctUntilChanged((prev, curr) => {
+                // Compare if the documents have actually changed
+                return JSON.stringify(prev) === JSON.stringify(curr)
+              })
+            )
+            .subscribe((docs) => {
+              // This will be triggered on any change to the todos collection
+              const updatedDocs = docs
+                .map((doc) => doc.toJSON())
+                .filter((doc) => doc._deleted === false)
 
-            // Call the provided callback with the updated data
-            callback(updatedDocs)
-          })
+              // Call the provided callback with the updated data
+              callback(updatedDocs)
+            })
         }
       }
     }

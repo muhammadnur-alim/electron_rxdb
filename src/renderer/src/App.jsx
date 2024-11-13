@@ -18,8 +18,7 @@ function App() {
       // Load initial todos
       const loadTodos = async () => {
         await db.todos.subscribe((updateTodos) => {
-          console.log(updateTodos)
-          setTodos((prev) => [...prev, updateTodos])
+          setTodos(updateTodos)
         })
         // const result = await db.todos.find()
         // console.log(result, '----result')
@@ -30,7 +29,7 @@ function App() {
 
   const addTodo = async () => {
     const result = await db.todos.insert({
-      _id: 'todo_' + Date.now().toString(),
+      id: 'todo_' + Date.now().toString(),
       name: 'electron_rxdb_todo_' + Date.now().toString(),
       done: false,
       timestamp: new Date().toISOString()
@@ -39,10 +38,10 @@ function App() {
   }
 
   const toggleTodo = async (id) => {
-    const todo = todos.find((t) => t._id === id)
+    const todo = todos.find((t) => t.id === id)
     if (todo) {
       const updated = await db.todos.update(id, { done: !todo.done })
-      setTodos((prev) => prev.map((t) => (t._id === id ? updated : t)))
+      setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)))
     }
   }
 
@@ -50,7 +49,7 @@ function App() {
     try {
       const success = await db.todos.delete(id)
       if (success) {
-        setTodos((prev) => prev.filter((todo) => todo._id !== id))
+        setTodos((prev) => prev.filter((todo) => todo.id !== id))
       }
     } catch (error) {
       console.error('Error deleting todo:', error)
