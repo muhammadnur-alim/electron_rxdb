@@ -21,6 +21,7 @@
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
     "eventsource": "^2.0.2",
+    "fake-indexeddb": "^6.0.0",
     "mongodb": "^6.10.0",
     "uuid": "^11.0.3"
   },

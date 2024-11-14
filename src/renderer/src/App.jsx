@@ -2,18 +2,18 @@ import { useState, useEffect } from 'react'
 
 function App() {
   const [db, setDb] = useState(null)
-  const [populateDb, setPopulateDb] = useState(null)
+  // const [populateDb, setPopulateDb] = useState(null)
   const [todos, setTodos] = useState([])
-  const [posts, setPosts] = useState([])
-  const [users, setUsers] = useState([])
+  // const [posts, setPosts] = useState([])
+  // const [users, setUsers] = useState([])
 
   useEffect(() => {
     // Initialize database
     const initDb = async () => {
       const database = await window.database.init()
-      const populate = await window.populate.init()
+      // const populate = await window.populate.init()
       setDb(database)
-      setPopulateDb(populate)
+      // setPopulateDb(populate)
     }
     initDb()
   }, [])
@@ -23,28 +23,36 @@ function App() {
       // Load initial todos
       // Ambil data dari subscribe
       const loadTodos = async () => {
-        await db.todos.subscribe((updateTodos) => {
-          // Directly set the todos state with the filtered result
-          setTodos(updateTodos)
+        await db.todos.subscribe((updatedDocs) => {
+          try {
+            setTodos(updatedDocs)
+          } catch (error) {
+            console.error('Error handling update:', error)
+          }
         })
       }
       loadTodos()
     }
 
-    if (populateDb) {
-      const loadPosts = async () => {
-        await populateDb.posts.subscribe((updatePost) => {
-          // Directly set the todos state with the filtered result
-          setPosts(updatePost)
-        })
+    // if (populateDb) {
+    //   const loadPosts = async () => {
+    //     await populateDb.posts.subscribe((updatePost) => {
+    //       // Directly set the todos state with the filtered result
+    //       setPosts(updatePost)
+    //     })
 
-        await populateDb.users.subscribe((updateUsers) => {
-          setUsers(updateUsers)
-        })
-      }
-      loadPosts()
-    }
+    //     await populateDb.users.subscribe((updateUsers) => {
+    //       setUsers(updateUsers)
+    //     })
+    //   }
+    //   loadPosts()
+    // }
   }, [db])
+
+  const cleanUp = async () => {
+    await db.todos.cleanUp()
+    console.log('running clean up---------------')
+  }
 
   const addTodo = async () => {
     await db.todos.insert({
@@ -58,20 +66,20 @@ function App() {
     // setTodos((prev) => [...prev, result])
   }
 
-  const addPost = async () => {
-    await populateDb.posts.insert({
-      id: '_id' + new Date().toISOString(),
-      content: 'Content Date ' + Date.now().toString(),
-      user_id: '_idLim'
-    })
-  }
+  // const addPost = async () => {
+  //   await populateDb.posts.insert({
+  //     id: '_id' + new Date().toISOString(),
+  //     content: 'Content Date ' + Date.now().toString(),
+  //     userId: '_idLim'
+  //   })
+  // }
 
-  const addUser = async () => {
-    await populateDb.users.insert({
-      id: '_idLim',
-      name: 'Alim'
-    })
-  }
+  // const addUser = async () => {
+  //   await populateDb.users.insert({
+  //     id: '_idLim',
+  //     name: 'Alim'
+  //   })
+  // }
 
   const toggleTodo = async (id) => {
     const todo = todos.find((t) => t.id === id)
@@ -101,6 +109,7 @@ function App() {
     <>
       <h1>Hello RxDb!</h1>
       <button onClick={addTodo}>insertData</button>
+      <button onClick={cleanUp}>Clean Up</button>
       <h2>Todos:</h2>
       {todos.length > 0 ? (
         <ul>
@@ -127,13 +136,13 @@ function App() {
         <p>No todos available</p>
       )}
 
-      <h2>Posts With Population:</h2>
+      {/* <h2>Posts With Population:</h2>
       <button onClick={addPost}>Post a Data</button>
       {posts.length > 0 ? (
         <ul>
           {posts.map((post) => (
             <li key={post.id}>
-              {post.content} - {post.user_id}
+              {post.id} - {post.content} - {post.userId}
             </li>
           ))}
         </ul>
@@ -153,7 +162,7 @@ function App() {
         </ul>
       ) : (
         <p>No posts available</p>
-      )}
+      )} */}
     </>
   )
 }
