@@ -4,19 +4,32 @@ function App() {
   const [db, setDb] = useState(null)
   // const [populateDb, setPopulateDb] = useState(null)
   const [todos, setTodos] = useState([])
+  const [users] = useState([
+    'sharkpos.course@gmail.com',
+    'irfanfandi38@gmail.com',
+    'dea.edria@gmail.com'
+  ])
+  const [token, setToken] = useState(null)
   // const [posts, setPosts] = useState([])
   // const [users, setUsers] = useState([])
 
+  const initDb = async () => {
+    const database = await window.database.init()
+    // const populate = await window.populate.init()
+    setDb(database)
+    // setPopulateDb(populate)
+  }
+
   useEffect(() => {
     // Initialize database
-    const initDb = async () => {
-      const database = await window.database.init()
-      // const populate = await window.populate.init()
-      setDb(database)
-      // setPopulateDb(populate)
-    }
-    initDb()
   }, [])
+
+  useEffect(() => {
+    if (token) {
+      //Using RxState to send data to preload
+      initDb(token)
+    }
+  }, [token])
 
   useEffect(() => {
     if (db) {
@@ -105,11 +118,38 @@ function App() {
     }
   }
 
+  const handleLogin = async (user) => {
+    const userCreds = { username: user }
+    try {
+      const response = await fetch(`https://sort.my.id/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userCreds)
+      })
+
+      if (!response.ok) {
+        throw new Error(`Login failed: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      // Save the response data in local storage or state as needed
+      console.log('Login successful:', data)
+      setToken(data)
+    } catch (error) {
+      console.error('Error during login:', error)
+    }
+  }
+
   return (
     <>
       <h1>Hello RxDb!</h1>
       <button onClick={addTodo}>insertData</button>
       <button onClick={cleanUp}>Clean Up</button>
+      <button onClick={() => handleLogin(users[0])}>Login as {users[0]}</button>
+      <button onClick={() => handleLogin(users[1])}>Login as {users[1]}</button>
+
       <h2>Todos:</h2>
       {todos.length > 0 ? (
         <ul>

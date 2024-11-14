@@ -11,7 +11,7 @@ import { distinctUntilChanged } from 'rxjs/operators'
 const api = {}
 
 const database = {
-  init: async () => {
+  init: async (token) => {
     const db = await initDatabase()
 
     const myPullStream$ = new Subject()
@@ -42,7 +42,8 @@ const database = {
             method: 'POST',
             headers: {
               Accept: 'application/json',
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              Authorization: token
             },
             body: JSON.stringify(changeRows)
           })
@@ -57,7 +58,14 @@ const database = {
           /**
            * In this example we replicate with a remote REST server
            */
-          const response = await fetch(`${syncUrl}?minUpdatedAt=${minTimestamp}&limit=${batchSize}`)
+          const response = await fetch(
+            `${syncUrl}?minUpdatedAt=${minTimestamp}&limit=${batchSize}`,
+            {
+              headers: {
+                Authorization: token
+              }
+            }
+          )
           const documentsFromRemote = await response.json()
           return {
             /**
