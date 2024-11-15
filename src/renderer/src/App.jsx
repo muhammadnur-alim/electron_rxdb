@@ -68,6 +68,9 @@ function App() {
   }
 
   const addTodo = async () => {
+    if (!token) {
+      return
+    }
     await db.todos.insert({
       id: 'todo_' + new Date().toISOString(),
       name: 'electron_rxdb_todo_' + Date.now().toString(),
@@ -95,6 +98,9 @@ function App() {
   // }
 
   const toggleTodo = async (id) => {
+    if (!token) {
+      return
+    }
     const todo = todos.find((t) => t.id === id)
     if (todo) {
       // Update the todo in the database by toggling the `done` field
@@ -108,6 +114,9 @@ function App() {
 
   const handleDeleteTodos = async (id) => {
     try {
+      if (!token) {
+        return
+      }
       const success = await db.todos.delete(id)
       if (success) {
         //Barisan ini bisa di hapus
@@ -145,10 +154,21 @@ function App() {
   return (
     <>
       <h1>Hello RxDb!</h1>
-      <button onClick={addTodo}>insertData</button>
-      <button onClick={cleanUp}>Clean Up</button>
+      <button onClick={addTodo} disabled={!token}>
+        insertData
+      </button>
+      <button onClick={cleanUp} disabled={!token}>
+        Clean Up
+      </button>
+      <br />
       <button onClick={() => handleLogin(users[0])}>Login as {users[0]}</button>
+      <br />
+
       <button onClick={() => handleLogin(users[1])}>Login as {users[1]}</button>
+      <br />
+
+      <button onClick={() => handleLogin(users[2])}>Login as {users[2]}</button>
+      <br />
 
       <h2>Todos:</h2>
       {todos.length > 0 ? (
@@ -160,12 +180,14 @@ function App() {
                 key={todo.id}
                 onClick={() => handleDeleteTodos(todo.id)}
                 style={{ marginLeft: '10px', color: 'red' }}
+                disabled={!token}
               >
                 Delete
               </button>
               <button
                 onClick={() => toggleTodo(todo.id)}
                 style={{ marginLeft: '10px', color: 'green' }}
+                disabled={!token}
               >
                 Done
               </button>
