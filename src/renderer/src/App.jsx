@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 
 function App() {
   const [db, setDb] = useState(null)
-  // const [populateDb, setPopulateDb] = useState(null)
   const [todos, setTodos] = useState([])
   const [users] = useState([
     'sharkpos.course@gmail.com',
@@ -10,6 +9,7 @@ function App() {
     'dea.edria@gmail.com'
   ])
   const [token, setToken] = useState(null)
+  // const [populateDb, setPopulateDb] = useState(null)
   // const [posts, setPosts] = useState([])
   // const [users, setUsers] = useState([])
 
@@ -151,6 +151,11 @@ function App() {
     }
   }
 
+  const handleLogOut = () => {
+    setToken(null)
+    setTodos([])
+  }
+
   return (
     <>
       <h1>Hello RxDb!</h1>
@@ -169,6 +174,7 @@ function App() {
 
       <button onClick={() => handleLogin(users[2])}>Login as {users[2]}</button>
       <br />
+      <button onClick={handleLogOut}>Logout</button>
 
       <h2>Todos:</h2>
       {todos.length > 0 ? (

@@ -88,6 +88,7 @@ const database = {
     })
 
     replicateState.error$.subscribe((error) => {
+      myPullStream$.next('RESYNC')
       console.error('replication error:', error)
     })
 
